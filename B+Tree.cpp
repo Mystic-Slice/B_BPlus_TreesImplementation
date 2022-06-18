@@ -132,6 +132,38 @@ class Node {
             numKeys += rightNode->numKeys;
         }
 
+        Node* mergeWithChildren(Node* rightNode) {
+            auto currIndex = find(parent->children.begin(), parent->children.end(), this) - parent->children.begin();
+            int parentKey = parent->keys[currIndex];
+            parent->keys.erase(parent->keys.begin() + currIndex);
+            parent->numKeys--;
+
+            auto itrNode = find(parent->children.begin(), parent->children.end(), rightNode);
+            parent->children.erase(itrNode);
+            parent->children.push_back(nullptr);
+            parent->numChildren--;
+
+            addKey(parentKey);
+            for(int i = numKeys; i < numKeys + rightNode->numKeys; i++) {
+                keys[i] = rightNode->keys[i - numKeys];
+            }
+            numKeys += rightNode->numKeys;
+
+            for(int i = numChildren; i<numChildren + rightNode->numChildren; i++) {
+                children[i] = rightNode->children[i - numChildren];
+            }
+            numChildren += rightNode->numChildren;
+
+            if(parent->numKeys == 0) {
+                parent = nullptr;
+                return this;
+            } else {
+                Node* returnRoot = parent;
+                while(returnRoot->parent) returnRoot = returnRoot->parent;
+                return returnRoot;
+            }
+        }
+
         // Adds the key into its correct position in sorted order
         void addKey(int key) {
             int index;
@@ -397,7 +429,6 @@ class BPlusTree {
         }
 
         void manageUnderflowParent(Node* node) {
-            cout<<"Here"<<endl;
             if(not node) return;
 
             if(node->numKeys >= minChildren - 1) return;
@@ -431,16 +462,15 @@ class BPlusTree {
                 return;
             }
 
-            // !TODO: Merging of internal nodes
             // Try merge with leftSibling
             if(leftSibling) {
-                leftSibling->merge(node);
+                root = leftSibling->mergeWithChildren(node);
                 return;
             }
 
             // Try merge with rightSibling
             if(rightSibling) {
-                node->merge(rightSibling);
+                root = node->mergeWithChildren(rightSibling);
                 return;
             }
 
@@ -521,7 +551,7 @@ class BPlusTree {
 
 int main() {
     freopen("error.txt", "w", stderr);
-    BPlusTree tree(3);
+    BPlusTree tree(2);
     tree.insertKey(10);
     tree.insertKey(20);
     tree.insertKey(30);
@@ -575,6 +605,10 @@ int main() {
         tree.deleteKey(70);
         tree.deleteKey(80);
         tree.deleteKey(50);
+        tree.deleteKey(130);
+        tree.deleteKey(140);
+        tree.deleteKey(120);
+        // tree.deleteKey(110);
 
     cout<<endl<<endl<<endl;
     cout<<"After deletion"<<endl;
