@@ -36,6 +36,102 @@ class Node {
 
         bool isLeaf() { return leaf; }
 
+        bool canDonate() { return numKeys > (minChildren - 1); }
+
+        // bool isBoundsRespected() { return numKeys >= minChildren - 1 && numKeys <= maxChildren - 1; }
+
+        Node* leftSibling() {
+            if(not parent) return nullptr;
+            int index = find(parent->children.begin(), parent->children.end(), this) - parent->children.begin();
+            if(index == 0) return nullptr;
+            else return parent->children[index - 1];
+        }
+
+        Node* rightSibling() {
+            if(not parent) return nullptr;
+            int index = find(parent->children.begin(), parent->children.end(), this) - parent->children.begin();
+            if(index == parent->children.size() - 1) return nullptr;
+            else return parent->children[index + 1];
+        }
+
+        int donateGreatestKey() {
+            int donatedKey = keys[numKeys - 1];
+            keys[numKeys - 1] = INT_MAX;
+            numKeys--;
+            return donatedKey;
+        }
+
+        Node* donateGreatestChild() {
+            Node* donatedChild = children[numChildren - 1];
+            children[numChildren - 1] = nullptr;
+            numChildren--;
+            return donatedChild;
+        }
+
+        int donateLeastKey() {
+            int donatedKey = keys[0];
+            keys.erase(keys.begin());
+            keys.push_back(INT_MAX);
+            numKeys--;
+            return donatedKey;
+        }
+
+        Node* donateLeastChild() {
+            Node* donatedChild = children[0];
+            children.erase(children.begin());
+            children.push_back(nullptr);
+            numChildren--;
+            return donatedChild;
+        }
+
+        int getNextKey(int donatedKey) {
+            int index = find(keys.begin(), keys.end(), donatedKey) - keys.begin();
+            int nextKey = keys[index + 1];
+            keys.erase(keys.begin() + index + 1);
+            numKeys--;
+            return nextKey;
+        }
+
+        int getPrevKey(int donatedKey) {
+            int index = find(keys.begin(), keys.end(), donatedKey) - keys.begin();
+            int prevKey = keys[index - 1];
+            keys.erase(keys.begin() + index - 1);
+            numKeys--;
+            return prevKey;
+        }
+
+        void replaceDonatedKey(int donatedKey) {
+            int index = find(keys.begin(), keys.end(), donatedKey) - keys.begin();
+            if(index >= keys.size()) return;
+            keys[index] = rightMostKey(children[index]);
+        }
+
+        int rightMostKey(Node* node) {
+            if(node->isLeaf()) {
+                return node->keys[node->numKeys - 1];
+            } else {
+                return rightMostKey(node->children[node->numChildren - 1]);
+            }
+        }
+
+        void merge(Node* rightNode) {
+
+            auto currIndex = find(parent->children.begin(), parent->children.end(), this) - parent->children.begin();
+            parent->keys.erase(parent->keys.begin() + currIndex);
+            parent->numKeys--;
+            
+            auto itrNode = find(parent->children.begin(), parent->children.end(), rightNode);
+            parent->children.erase(itrNode);
+            parent->children.push_back(nullptr);
+            parent->numChildren--;
+
+            
+            for(int i = numKeys; i < numKeys + rightNode->numKeys; i++) {
+                keys[i] = rightNode->keys[i - numKeys];
+            }
+            numKeys += rightNode->numKeys;
+        }
+
         // Adds the key into its correct position in sorted order
         void addKey(int key) {
             int index;
@@ -50,8 +146,8 @@ class Node {
         }
 
         // Adds the child to the same corresponding index as the key
-        void addChild(Node* child, int key) {
-            int index = find(keys.begin(), keys.end(), key) - keys.begin();
+        void addChild(Node* child, int key, int offset = 0) {
+            int index = find(keys.begin(), keys.end(), key) - keys.begin() + offset;
             for(int i = children.size() - 1; i>index; i--) {
                 children[i] = children[i-1];
             }
@@ -221,7 +317,7 @@ class BPlusTree {
             return searchNode(key, node->children.back());
         }
 
-        void insert(int key) {
+        void insertKey(int key) {
             if(not root) {
                 root = new Node(minChildren);
                 root->addKey(key);
@@ -231,6 +327,124 @@ class BPlusTree {
             Node* node = searchNode(key, root);
             node->addKey(key);
             root = node->splitIfNeeded();
+        }
+
+        void deleteKey(int key) {
+            // If data present in leaf and only in the leaf
+            // delete that no problem
+
+            // If data present in leaf and internal node
+            // but no problem with bounds
+            // delete both and replace the internal node with the least value from the right subtree
+
+            // If deleting data causes problems with bounds
+            // Try borrow from siblings
+            // else merge with siblings
+            Node* node = searchNode(key, root);
+            auto itr = find(node->keys.begin(), node->keys.end(), key);
+            if(itr == node->keys.end()) {
+                cout<<"Node not found"<<endl;
+                return;
+            }
+
+            int index = itr - node->keys.begin();
+            for(int i = index; i < node->keys.size() - 1; i++) {
+                node->keys[i] = node->keys[i + 1];
+            }
+            node->keys.back() = INT_MAX;
+            node->numKeys--;
+
+            manageUnderflowLeaf(node, key);
+            manageUnderflowParent(node->parent);
+        }
+
+        void manageUnderflowLeaf(Node* node, int key) {
+            if(node->numKeys >= minChildren - 1) return;
+            if(node == root) {
+                if(node->numKeys == 0) root = nullptr;
+                return;
+            };
+
+            // Try borrowing from leftSibling
+            Node* leftSibling = node->leftSibling();
+            if(leftSibling && leftSibling->canDonate()) {
+                int donatedKey = leftSibling->donateGreatestKey();
+                node->addKey(donatedKey);
+                node->parent->replaceDonatedKey(donatedKey);
+                return;
+            }
+
+            // Try borrowing from rightSibling
+            Node* rightSibling = node->rightSibling();
+            if(rightSibling && rightSibling->canDonate()) {
+                int donatedKey = rightSibling->donateLeastKey();
+                node->addKey(donatedKey);
+                node->parent->replaceDonatedKey(donatedKey);
+                return;
+            }
+
+            // Try merge with leftSibling
+            if(leftSibling) {
+                leftSibling->merge(node);
+                return;
+            }
+
+            // Try merge with rightSibling
+            if(rightSibling) {
+                node->merge(rightSibling);
+                return;
+            }
+        }
+
+        void manageUnderflowParent(Node* node) {
+            cout<<"Here"<<endl;
+            if(not node) return;
+
+            if(node->numKeys >= minChildren - 1) return;
+
+            if(node == root) {
+                if(node->numKeys == 0) root = nullptr;
+                return;
+            };
+
+            // Try borrowing from leftSibling
+            Node* leftSibling = node->leftSibling();
+            if(leftSibling && leftSibling->canDonate()) {
+                int donatedKey = leftSibling->donateGreatestKey();
+                Node* donatedChild = leftSibling->donateGreatestChild();
+                node->parent->addKey(donatedKey);
+                int nextKey = node->parent->getNextKey(donatedKey);
+                node->addKey(nextKey);
+                node->addChild(donatedChild, nextKey);
+                return;
+            }
+
+            // Try borrowing from rightSibling
+            Node* rightSibling = node->rightSibling();
+            if(rightSibling && rightSibling->canDonate()) {
+                int donatedKey = rightSibling->donateLeastKey();
+                Node* donatedChild = rightSibling->donateLeastChild();
+                node->parent->addKey(donatedKey);
+                int prevKey = node->parent->getPrevKey(donatedKey);
+                node->addKey(prevKey);
+                node->addChild(donatedChild, prevKey, 1);
+                return;
+            }
+
+            // !TODO: Merging of internal nodes
+            // Try merge with leftSibling
+            if(leftSibling) {
+                leftSibling->merge(node);
+                return;
+            }
+
+            // Try merge with rightSibling
+            if(rightSibling) {
+                node->merge(rightSibling);
+                return;
+            }
+
+            manageUnderflowParent(node->parent);
         }
 
         void inorderTraversal() {
@@ -286,53 +500,83 @@ class BPlusTree {
                 }
 
                 cout<<node->keys<<" | ";
+
+                // cout<<node->keys<<" ("<<node<<")"<<" | ";
+                // cout<<node->keys<<" ("<<node->parent<<")"<<" | ";
+
+                // cout<<"("<<node<<") ";
+                // for(auto child: node->children) {
+                //     if(not child) break;
+                //     cout<<child<<" ";
+                // }
+                // cout<<"("<<node->parent<<")"<<" | ";
                 for(auto child: node->children) {
                     if(not child) break;
                     q.push({child, depth+1});
                 }
             }
+            cout<<endl;
         }
 };
 
 int main() {
-    BPlusTree tree(2);
-    tree.insert(10);
-    tree.insert(20);
-    tree.insert(30);
-    tree.insert(40);
-    tree.insert(50);
-    tree.insert(60);
-    tree.insert(70);
-    tree.insert(80);
-    tree.insert(90);
-    tree.insert(100);
-    tree.insert(110);
-    tree.insert(120);
-    tree.insert(130);
-    tree.insert(140);
-    tree.insert(150);
-    tree.insert(160);
-    tree.insert(170);
-    tree.insert(180);
-    tree.insert(190);
-    tree.insert(200);
-    tree.insert(210);
-    tree.insert(220);
-    tree.insert(230);
-    tree.insert(240);
-    tree.insert(250);
-    tree.insert(260);
-    tree.insert(270);
-    tree.insert(280);
-    tree.insert(290);
-    tree.insert(300);
-    tree.insert(310);    
-    tree.insert(95);
+    freopen("error.txt", "w", stderr);
+    BPlusTree tree(3);
+    tree.insertKey(10);
+    tree.insertKey(20);
+    tree.insertKey(30);
+    tree.insertKey(40);
+    tree.insertKey(50);
+    tree.insertKey(60);
+    tree.insertKey(70);
+    tree.insertKey(80);
+    tree.insertKey(90);
+    tree.insertKey(100);
+    tree.insertKey(110);
+    tree.insertKey(120);
+    tree.insertKey(130);
+    tree.insertKey(140);
+    tree.insertKey(150);
+    tree.insertKey(160);
+    tree.insertKey(170);
+    tree.insertKey(180);
+    tree.insertKey(190);
+    tree.insertKey(200);
+    tree.insertKey(210);
+    tree.insertKey(220);
+    tree.insertKey(230);
+    tree.insertKey(240);
+    tree.insertKey(250);
+    tree.insertKey(260);
+    tree.insertKey(270);
+    tree.insertKey(280);
+    tree.insertKey(290);
+    tree.insertKey(300);
+    tree.insertKey(310);    
+    tree.insertKey(95);
 
     tree.inorderTraversal();
-    cout<<endl;
-    cout<<"Leaves"<<endl;
-    tree.traverseLeaves();
-    cout<<"LevelOrder"<<endl;
+    // cout<<endl;
+    // cout<<"Leaves"<<endl;
+    // tree.traverseLeaves();
+    // cout<<"LevelOrder"<<endl;
+
+    cout<<"Before deletion"<<endl;
+    tree.levelOrder();
+
+        // tree.deleteKey(50);
+        tree.deleteKey(60);
+        tree.deleteKey(90);
+        tree.deleteKey(95);
+        tree.deleteKey(100);
+        tree.deleteKey(30);
+        tree.deleteKey(40);
+        tree.deleteKey(20);
+        tree.deleteKey(70);
+        tree.deleteKey(80);
+        tree.deleteKey(50);
+
+    cout<<endl<<endl<<endl;
+    cout<<"After deletion"<<endl;
     tree.levelOrder();
 }
