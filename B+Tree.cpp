@@ -3,13 +3,15 @@
 
 using namespace std;
 
-vector<int> COLORS = { FOREGROUND_BLUE,
+vector<int> COLORS = {  FOREGROUND_BLUE,
                         FOREGROUND_GREEN,
                         FOREGROUND_RED,
                         FOREGROUND_BLUE | FOREGROUND_GREEN,
                         FOREGROUND_GREEN | FOREGROUND_RED,
                         FOREGROUND_RED | FOREGROUND_BLUE,
-                        FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED };
+                        FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED, 
+                        7 // White
+                    };
 void changeColor(int desiredColor){
     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), desiredColor);
 }
@@ -178,6 +180,7 @@ class Node {
 
             for(int i = numChildren; i<numChildren + rightNode->numChildren; i++) {
                 children[i] = rightNode->children[i - numChildren];
+                children[i]->parent = this;
             }
             numChildren += rightNode->numChildren;
 
@@ -388,16 +391,8 @@ class BPlusTree {
         }
 
         void deleteKey(int key) {
-            // If data present in leaf and only in the leaf
-            // delete that no problem
-
-            // If data present in leaf and internal node
-            // but no problem with bounds
-            // delete both and replace the internal node with the least value from the right subtree
-
-            // If deleting data causes problems with bounds
-            // Try borrow from siblings
-            // else merge with siblings
+            // Delete key only from leaves
+            // Key can remain in the internal nodes
             Node* node = searchNode(key, root);
             auto itr = find(node->keys.begin(), node->keys.end(), key);
             if(itr == node->keys.end()) {
@@ -560,7 +555,7 @@ class BPlusTree {
                 }
 
                 // Just to be able to group the children of nodes
-                if(node->parent != prevParent) {
+                if(node->parent != prevParent || node == root) {
                     prevParent = node->parent;
                     changeColor(COLORS[colorIndex]);
                     colorIndex = (colorIndex + 1)%COLORS.size();
@@ -587,6 +582,53 @@ class BPlusTree {
 };
 
 int main() {
-    int maxChildren = 4;
+    int maxChildren = 5;
     BPlusTree tree(maxChildren);
+
+    tree.insertKey(1804);
+    tree.insertKey(846);
+    tree.insertKey(1681);
+    tree.insertKey(1714);
+    tree.insertKey(1957);
+    tree.insertKey(424);
+    tree.insertKey(719);
+    tree.insertKey(1649);
+    tree.insertKey(596);
+    tree.insertKey(1189);
+    tree.insertKey(1025);
+    tree.insertKey(1350);
+    tree.insertKey(783);
+    tree.insertKey(1102);
+    tree.insertKey(2044);
+    tree.insertKey(1967);
+    tree.insertKey(1365);
+    tree.insertKey(1540);
+    tree.insertKey(304);
+    tree.insertKey(1303);
+    tree.insertKey(35);
+    tree.insertKey(521);
+    tree.levelOrder();
+
+
+    vector<int> deleteKeys = {
+        1365,
+        1714,
+        783,
+        596,
+        304,
+        35,
+        1957,
+        1967,
+        1189,
+        1102,
+        521,
+        1025
+    };
+
+    for(auto i: deleteKeys) {
+        cout<<endl<<endl;
+        tree.deleteKey(i);
+        cout<<"Deleted "<<i<<endl;
+        tree.levelOrder();
+    }
 }
