@@ -112,7 +112,10 @@ class Node {
             }
         }
 
-        void merge(Node* rightNode) {
+        // Merge leaves
+        // Just add the keys to a single node and delete a key from parent
+        // No need to care about children here
+        Node* mergeLeaves(Node* rightNode) {
 
             auto currIndex = find(parent->children.begin(), parent->children.end(), this) - parent->children.begin();
             parent->keys.erase(parent->keys.begin() + currIndex);
@@ -128,9 +131,22 @@ class Node {
                 keys[i] = rightNode->keys[i - numKeys];
             }
             numKeys += rightNode->numKeys;
+
+            if(parent->numKeys == 0) {
+                parent = nullptr;
+                return this;
+            } else {
+                Node* returnRoot = parent;
+                while(returnRoot->parent) returnRoot = returnRoot->parent;
+                return returnRoot;
+            }
         }
 
-        Node* mergeWithChildren(Node* rightNode) {
+        // Merge internal nodes
+        // Transfer one node to parent
+        // Pull down one node from parent
+        // Transfer keys and children to a single node
+        Node* mergeInternal(Node* rightNode) {
             auto currIndex = find(parent->children.begin(), parent->children.end(), this) - parent->children.begin();
             int parentKey = parent->keys[currIndex];
             parent->keys.erase(parent->keys.begin() + currIndex);
@@ -415,13 +431,13 @@ class BPlusTree {
 
             // Try merge with leftSibling
             if(leftSibling) {
-                leftSibling->merge(node);
+                root = leftSibling->mergeLeaves(node);
                 return;
             }
 
             // Try merge with rightSibling
             if(rightSibling) {
-                node->merge(rightSibling);
+                root = node->mergeLeaves(rightSibling);
                 return;
             }
         }
@@ -464,13 +480,13 @@ class BPlusTree {
 
             // Try merge with leftSibling
             if(leftSibling) {
-                root = leftSibling->mergeWithChildren(node);
+                root = leftSibling->mergeInternal(node);
                 return;
             }
 
             // Try merge with rightSibling
             if(rightSibling) {
-                root = node->mergeWithChildren(rightSibling);
+                root = node->mergeInternal(rightSibling);
                 return;
             }
 
@@ -557,63 +573,67 @@ int main() {
     tree.insertKey(40);
     tree.insertKey(50);
     tree.insertKey(60);
-    tree.insertKey(70);
-    tree.insertKey(80);
-    tree.insertKey(90);
-    tree.insertKey(100);
-    tree.insertKey(110);
-    tree.insertKey(120);
-    tree.insertKey(130);
-    tree.insertKey(140);
-    tree.insertKey(150);
-    tree.insertKey(160);
-    tree.insertKey(170);
-    tree.insertKey(180);
-    tree.insertKey(190);
-    tree.insertKey(200);
-    tree.insertKey(210);
-    tree.insertKey(220);
-    tree.insertKey(230);
-    tree.insertKey(240);
-    tree.insertKey(250);
-    tree.insertKey(260);
-    tree.insertKey(270);
-    tree.insertKey(280);
-    tree.insertKey(290);
-    tree.insertKey(300);
-    tree.insertKey(310);
-    tree.insertKey(95);
 
-    tree.inorderTraversal();
+    tree.deleteKey(30);
+    tree.deleteKey(60);
+    tree.deleteKey(40);
+    // tree.insertKey(70);
+    // tree.insertKey(80);
+    // tree.insertKey(90);
+    // tree.insertKey(100);
+    // tree.insertKey(110);
+    // tree.insertKey(120);
+    // tree.insertKey(130);
+    // tree.insertKey(140);
+    // tree.insertKey(150);
+    // tree.insertKey(160);
+    // tree.insertKey(170);
+    // tree.insertKey(180);
+    // tree.insertKey(190);
+    // tree.insertKey(200);
+    // tree.insertKey(210);
+    // tree.insertKey(220);
+    // tree.insertKey(230);
+    // tree.insertKey(240);
+    // tree.insertKey(250);
+    // tree.insertKey(260);
+    // tree.insertKey(270);
+    // tree.insertKey(280);
+    // tree.insertKey(290);
+    // tree.insertKey(300);
+    // tree.insertKey(310);
+    // tree.insertKey(95);
+
+    // tree.deleteKey(50);
+    // tree.deleteKey(60);
+    // tree.deleteKey(30);
+    // tree.deleteKey(90);
+    // tree.deleteKey(20);
+    // tree.deleteKey(95);
+    // tree.deleteKey(40);
+    // tree.deleteKey(230);
+    // tree.deleteKey(240);
+    // tree.deleteKey(250);
+    // tree.deleteKey(260);
+    // tree.deleteKey(290);
+    // tree.deleteKey(300);
+    // tree.deleteKey(270);
+    // tree.deleteKey(280);
+    // tree.deleteKey(210);
+
+    //     cout<<"Before deletion"<<endl;
+    // tree.levelOrder();
+    // tree.deleteKey(220);
+
+    // cout<<endl<<endl<<endl;
+    // cout<<"After deletion"<<endl;
+    tree.levelOrder();
+
+    // tree.inorderTraversal();
     // cout<<endl;
     // cout<<"Leaves"<<endl;
     // tree.traverseLeaves();
     // cout<<"LevelOrder"<<endl;
-
-    cout<<"Before deletion"<<endl;
-    tree.levelOrder();
-
-        tree.deleteKey(50);
-        tree.deleteKey(60);
-        tree.deleteKey(30);
-        tree.deleteKey(90);
-        tree.deleteKey(20);
-        tree.deleteKey(95);
-        tree.deleteKey(40);
-        tree.deleteKey(230);
-        tree.deleteKey(240);
-        tree.deleteKey(250);
-        tree.deleteKey(260);
-        tree.deleteKey(290);
-        tree.deleteKey(300);
-        tree.deleteKey(270);
-        tree.deleteKey(280);
-        tree.deleteKey(210);
-        tree.deleteKey(220);
-
-    cout<<endl<<endl<<endl;
-    cout<<"After deletion"<<endl;
-    tree.levelOrder();
-    cout<<tree.search(30)<<endl;
-    cout<<tree.root->keys<<endl;
+    // cout<<tree.search(30)<<endl;
+    // cout<<tree.root->keys<<endl;
 }
