@@ -134,6 +134,7 @@ class Node {
 
             auto currIndex = find(parent->children.begin(), parent->children.end(), this) - parent->children.begin();
             parent->keys.erase(parent->keys.begin() + currIndex);
+            parent->keys.push_back(INT_MAX);
             parent->numKeys--;
             
             auto itrNode = find(parent->children.begin(), parent->children.end(), rightNode);
@@ -165,6 +166,7 @@ class Node {
             auto currIndex = find(parent->children.begin(), parent->children.end(), this) - parent->children.begin();
             int parentKey = parent->keys[currIndex];
             parent->keys.erase(parent->keys.begin() + currIndex);
+            parent->keys.push_back(INT_MAX);
             parent->numKeys--;
 
             auto itrNode = find(parent->children.begin(), parent->children.end(), rightNode);
@@ -356,10 +358,6 @@ class BPlusTree {
 
         BPlusTree(int limit): minChildren(ceil(limit/2.0)), maxChildren(limit), root(nullptr) {}
 
-        /*
-            Return True or False depending on whether
-            the key exists in the tree
-        */
         bool search(int key) {
             Node* node = searchNode(key, root);
             if(not node) return false;
@@ -539,6 +537,11 @@ class BPlusTree {
         }
 
         void levelOrder() {
+            if(not root) {
+                cout<<"Tree is empty"<<endl;
+                return;
+            }
+
             int colorIndex = 0;
 
             int prevDepth = 0;
@@ -585,30 +588,37 @@ int main() {
     int maxChildren = 5;
     BPlusTree tree(maxChildren);
 
-    tree.insertKey(1804);
-    tree.insertKey(846);
-    tree.insertKey(1681);
-    tree.insertKey(1714);
-    tree.insertKey(1957);
-    tree.insertKey(424);
-    tree.insertKey(719);
-    tree.insertKey(1649);
-    tree.insertKey(596);
-    tree.insertKey(1189);
-    tree.insertKey(1025);
-    tree.insertKey(1350);
-    tree.insertKey(783);
-    tree.insertKey(1102);
-    tree.insertKey(2044);
-    tree.insertKey(1967);
-    tree.insertKey(1365);
-    tree.insertKey(1540);
-    tree.insertKey(304);
-    tree.insertKey(1303);
-    tree.insertKey(35);
-    tree.insertKey(521);
-    tree.levelOrder();
+    vector<int> insertKeys = { 
+        1804,
+        846,
+        1681,
+        1714,
+        1957,
+        424,
+        719,
+        1649,
+        596,
+        1189,
+        1025,
+        1350,
+        783,
+        1102,
+        2044,
+        1967,
+        1365,
+        1540,
+        304,
+        1303,
+        35,
+        521,
+    };
 
+    for(auto i: insertKeys) {
+        cout<<endl<<endl;
+        tree.insertKey(i);
+        cout<<"Inserted "<<i<<endl;
+        tree.levelOrder();
+    }
 
     vector<int> deleteKeys = {
         1365,
@@ -622,7 +632,17 @@ int main() {
         1189,
         1102,
         521,
-        1025
+        1025,
+        424,
+        1681,
+        1804,
+        719,
+        846,
+        1540,
+        1303,
+        1649,
+        2044,
+        1350
     };
 
     for(auto i: deleteKeys) {
