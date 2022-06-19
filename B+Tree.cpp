@@ -100,17 +100,17 @@ class Node {
             return prevKey;
         }
 
-        void replaceDonatedKey(int donatedKey) {
-            int index = find(keys.begin(), keys.end(), donatedKey) - keys.begin();
-            if(index >= keys.size()) return;
-            keys[index] = rightMostKey(children[index]);
+        void replaceDonatedKey(Node* node) {
+            int index = find(children.begin(), children.end(), node) - children.begin();
+            if(index >= children.size()) return;
+            keys[index] = leftMostKey(children[index+1]);
         }
 
-        int rightMostKey(Node* node) {
+        int leftMostKey(Node* node) {
             if(node->isLeaf()) {
-                return node->keys[node->numKeys - 1];
+                return node->keys[0];
             } else {
-                return rightMostKey(node->children[node->numChildren - 1]);
+                return leftMostKey(node->children[0]);
             }
         }
 
@@ -248,35 +248,35 @@ class Node {
             leftNode->leaf = leaf;
             leftNode->next = this;
 
-            // Retain the median element in the left node only for leaves
-            // This is taken care by the value of maxI            
-            int maxI = median;
+            // Retain the median element in the right node only for leaves
+            // This is taken care by the value of startI            
+            int startI = median + 1;
             // Only point of difference between b-tree and b+tree implementation :)
-            if(leaf) maxI++;
+            if(leaf) startI--;
 
             // Copy the elements of leftnode
-            for(int i = 0; i<=maxI; i++) {
-                if(i != maxI) leftNode->keys[i] = keys[i];
+            for(int i = 0; i<=median; i++) {
+                if(i != median) leftNode->keys[i] = keys[i];
                 leftNode->children[i] = children[i];
                 if(leftNode->children[i])
                     leftNode->children[i]->parent = leftNode; // Update parent pointer
             }
 
             // Shift the elements of right node to the front
-            for(int i = median + 1; i < keys.size(); i++) {
-                keys[i - median - 1] = keys[i];
+            for(int i = startI; i < keys.size(); i++) {
+                keys[i - startI] = keys[i];
             }
 
-            for(int i = median + 1; i < children.size(); i++) {
-                children[i - median - 1] = children[i];
+            for(int i = startI; i < children.size(); i++) {
+                children[i - startI] = children[i];
             }
 
             // Update the attributes of leftnode and rightnode (current node)
-            leftNode->numKeys = maxI;
-            numKeys = keys.size() - (median + 1);
+            leftNode->numKeys = median;
+            numKeys = keys.size() - (startI);
 
-            leftNode->numChildren = maxI + 1;
-            numChildren = children.size() - (median + 1);
+            leftNode->numChildren = median + 1;
+            numChildren = children.size() - (startI);
 
             // Clean the rest of the vectors
             for(int i = leftNode->numKeys; i<leftNode->keys.size(); i++) {
@@ -344,7 +344,7 @@ class BPlusTree {
             if(node->isLeaf()) return node;
 
             for(int i = 0; i<node->keys.size(); i++) {
-                if(key <= node->keys[i]) return searchNode(key, node->children[i]);
+                if(key < node->keys[i]) return searchNode(key, node->children[i]);
             }
             return searchNode(key, node->children.back());
         }
@@ -375,7 +375,7 @@ class BPlusTree {
             Node* node = searchNode(key, root);
             auto itr = find(node->keys.begin(), node->keys.end(), key);
             if(itr == node->keys.end()) {
-                cout<<"Node not found"<<endl;
+                cout<<"Node not found: "<<key<<endl;
                 return;
             }
 
@@ -402,7 +402,7 @@ class BPlusTree {
             if(leftSibling && leftSibling->canDonate()) {
                 int donatedKey = leftSibling->donateGreatestKey();
                 node->addKey(donatedKey);
-                node->parent->replaceDonatedKey(donatedKey);
+                node->parent->replaceDonatedKey(leftSibling);
                 return;
             }
 
@@ -411,7 +411,7 @@ class BPlusTree {
             if(rightSibling && rightSibling->canDonate()) {
                 int donatedKey = rightSibling->donateLeastKey();
                 node->addKey(donatedKey);
-                node->parent->replaceDonatedKey(donatedKey);
+                node->parent->replaceDonatedKey(node);
                 return;
             }
 
@@ -447,6 +447,7 @@ class BPlusTree {
                 int nextKey = node->parent->getNextKey(donatedKey);
                 node->addKey(nextKey);
                 node->addChild(donatedChild, nextKey);
+                donatedChild->parent = node;
                 return;
             }
 
@@ -459,6 +460,7 @@ class BPlusTree {
                 int prevKey = node->parent->getPrevKey(donatedKey);
                 node->addKey(prevKey);
                 node->addChild(donatedChild, prevKey, 1);
+                donatedChild->parent = node;
                 return;
             }
 
@@ -550,8 +552,7 @@ class BPlusTree {
 };
 
 int main() {
-    freopen("error.txt", "w", stderr);
-    BPlusTree tree(2);
+    BPlusTree tree(3);
     tree.insertKey(10);
     tree.insertKey(20);
     tree.insertKey(30);
@@ -594,23 +595,26 @@ int main() {
     cout<<"Before deletion"<<endl;
     tree.levelOrder();
 
-        // tree.deleteKey(50);
-        tree.deleteKey(60);
-        tree.deleteKey(90);
-        tree.deleteKey(95);
-        tree.deleteKey(100);
-        tree.deleteKey(30);
-        tree.deleteKey(40);
-        tree.deleteKey(20);
-        tree.deleteKey(70);
-        tree.deleteKey(80);
         tree.deleteKey(50);
-        tree.deleteKey(130);
-        tree.deleteKey(140);
-        tree.deleteKey(120);
+        tree.deleteKey(60);
+        tree.deleteKey(30);
+        tree.deleteKey(90);
+        tree.deleteKey(20);
+        tree.deleteKey(95);
+        tree.deleteKey(40);
+        // tree.deleteKey(30);
+        // tree.deleteKey(40);
+        // tree.deleteKey(20);
+        // tree.deleteKey(70);
+        // tree.deleteKey(80);
+        // tree.deleteKey(50);
+        // tree.deleteKey(130);
+        // tree.deleteKey(140);
+        // tree.deleteKey(120);
         // tree.deleteKey(110);
 
     cout<<endl<<endl<<endl;
     cout<<"After deletion"<<endl;
     tree.levelOrder();
+    cout<<tree.search(30)<<endl;
 }
