@@ -24,21 +24,19 @@ class Node {
         Node(int limit): leaf(false), 
                         parent(nullptr),
                         next(nullptr), 
-                        minChildren(limit), 
-                        maxChildren(limit*2),
+                        minChildren(ceil(limit/2.0)), 
+                        maxChildren(limit),
                         numChildren(0), 
                         numKeys(0),
                         // Initialize vectors filled with INT_MAX/nullptr to 
                         // maxsize + 1 to accomodate the one extra 
                         // element added before spliting
-                        keys(limit*2, INT_MAX), // maxKeys = maxChildren - 1
-                        children(limit*2 + 1, nullptr) {}
+                        keys(limit, INT_MAX), // maxKeys = maxChildren - 1
+                        children(limit + 1, nullptr) {}
 
         bool isLeaf() { return leaf; }
 
         bool canDonate() { return numKeys > (minChildren - 1); }
-
-        // bool isBoundsRespected() { return numKeys >= minChildren - 1 && numKeys <= maxChildren - 1; }
 
         Node* leftSibling() {
             if(not parent) return nullptr;
@@ -244,7 +242,7 @@ class Node {
             int medianKey = keys[median];
             
             // Create a new node for left child
-            Node* leftNode = new Node(minChildren);
+            Node* leftNode = new Node(maxChildren);
             leftNode->leaf = leaf;
             leftNode->next = this;
 
@@ -299,7 +297,7 @@ class Node {
             if(not parent) {
                 // Current node is the root
                 // Has to be split and new root is created
-                Node* newParent = new Node(minChildren);
+                Node* newParent = new Node(maxChildren);
                 newParent->addKey(medianKey);
                 newParent->addChild(leftNode, medianKey);
                 newParent->children[1] = this;
@@ -325,7 +323,7 @@ class BPlusTree {
         Node* root;
         int minChildren, maxChildren;
 
-        BPlusTree(int limit): minChildren(limit), maxChildren(limit*2), root(nullptr) {}
+        BPlusTree(int limit): minChildren(ceil(limit/2.0)), maxChildren(limit), root(nullptr) {}
 
         /*
             Return True or False depending on whether
@@ -351,7 +349,7 @@ class BPlusTree {
 
         void insertKey(int key) {
             if(not root) {
-                root = new Node(minChildren);
+                root = new Node(maxChildren);
                 root->addKey(key);
                 root->leaf = true;
                 return;
@@ -552,7 +550,7 @@ class BPlusTree {
 };
 
 int main() {
-    BPlusTree tree(3);
+    BPlusTree tree(6);
     tree.insertKey(10);
     tree.insertKey(20);
     tree.insertKey(30);
@@ -583,7 +581,7 @@ int main() {
     tree.insertKey(280);
     tree.insertKey(290);
     tree.insertKey(300);
-    tree.insertKey(310);    
+    tree.insertKey(310);
     tree.insertKey(95);
 
     tree.inorderTraversal();
@@ -602,19 +600,20 @@ int main() {
         tree.deleteKey(20);
         tree.deleteKey(95);
         tree.deleteKey(40);
-        // tree.deleteKey(30);
-        // tree.deleteKey(40);
-        // tree.deleteKey(20);
-        // tree.deleteKey(70);
-        // tree.deleteKey(80);
-        // tree.deleteKey(50);
-        // tree.deleteKey(130);
-        // tree.deleteKey(140);
-        // tree.deleteKey(120);
-        // tree.deleteKey(110);
+        tree.deleteKey(230);
+        tree.deleteKey(240);
+        tree.deleteKey(250);
+        tree.deleteKey(260);
+        tree.deleteKey(290);
+        tree.deleteKey(300);
+        tree.deleteKey(270);
+        tree.deleteKey(280);
+        tree.deleteKey(210);
+        tree.deleteKey(220);
 
     cout<<endl<<endl<<endl;
     cout<<"After deletion"<<endl;
     tree.levelOrder();
     cout<<tree.search(30)<<endl;
+    cout<<tree.root->keys<<endl;
 }
