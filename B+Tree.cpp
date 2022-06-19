@@ -1,5 +1,18 @@
 #include <bits/stdc++.h>
+#include <windows.h>
+
 using namespace std;
+
+vector<int> COLORS = { FOREGROUND_BLUE,
+                        FOREGROUND_GREEN,
+                        FOREGROUND_RED,
+                        FOREGROUND_BLUE | FOREGROUND_GREEN,
+                        FOREGROUND_GREEN | FOREGROUND_RED,
+                        FOREGROUND_RED | FOREGROUND_BLUE,
+                        FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED };
+void changeColor(int desiredColor){
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), desiredColor);
+}
 
 // Just me being lazy to write a for loop
 template <typename T>
@@ -335,7 +348,6 @@ class Node {
 
 class BPlusTree {
     public:
-        // !TODO: Make private
         Node* root;
         int minChildren, maxChildren;
 
@@ -513,7 +525,6 @@ class BPlusTree {
             if(node->keys.back() != INT_MAX) inorderTraversal(node->children.back());
         }
 
-        // !TODO: Maybe have a separate pointer for the leftmost node
         void traverseLeaves() {
             if(not root) {
                 cout<<"Tree is empty"<<endl;
@@ -533,7 +544,10 @@ class BPlusTree {
         }
 
         void levelOrder() {
+            int colorIndex = 0;
+
             int prevDepth = 0;
+            Node* prevParent = nullptr;
             queue<pair<Node*, int>> q;
             q.push({root, 0});
             while(!q.empty()) {
@@ -543,6 +557,13 @@ class BPlusTree {
                 if(depth != prevDepth) {
                     cout<<endl;
                     prevDepth =depth;
+                }
+
+                // Just to be able to group the children of nodes
+                if(node->parent != prevParent) {
+                    prevParent = node->parent;
+                    changeColor(COLORS[colorIndex]);
+                    colorIndex = (colorIndex + 1)%COLORS.size();
                 }
 
                 cout<<node->keys<<" | ";
@@ -566,74 +587,6 @@ class BPlusTree {
 };
 
 int main() {
-    BPlusTree tree(6);
-    tree.insertKey(10);
-    tree.insertKey(20);
-    tree.insertKey(30);
-    tree.insertKey(40);
-    tree.insertKey(50);
-    tree.insertKey(60);
-
-    tree.deleteKey(30);
-    tree.deleteKey(60);
-    tree.deleteKey(40);
-    // tree.insertKey(70);
-    // tree.insertKey(80);
-    // tree.insertKey(90);
-    // tree.insertKey(100);
-    // tree.insertKey(110);
-    // tree.insertKey(120);
-    // tree.insertKey(130);
-    // tree.insertKey(140);
-    // tree.insertKey(150);
-    // tree.insertKey(160);
-    // tree.insertKey(170);
-    // tree.insertKey(180);
-    // tree.insertKey(190);
-    // tree.insertKey(200);
-    // tree.insertKey(210);
-    // tree.insertKey(220);
-    // tree.insertKey(230);
-    // tree.insertKey(240);
-    // tree.insertKey(250);
-    // tree.insertKey(260);
-    // tree.insertKey(270);
-    // tree.insertKey(280);
-    // tree.insertKey(290);
-    // tree.insertKey(300);
-    // tree.insertKey(310);
-    // tree.insertKey(95);
-
-    // tree.deleteKey(50);
-    // tree.deleteKey(60);
-    // tree.deleteKey(30);
-    // tree.deleteKey(90);
-    // tree.deleteKey(20);
-    // tree.deleteKey(95);
-    // tree.deleteKey(40);
-    // tree.deleteKey(230);
-    // tree.deleteKey(240);
-    // tree.deleteKey(250);
-    // tree.deleteKey(260);
-    // tree.deleteKey(290);
-    // tree.deleteKey(300);
-    // tree.deleteKey(270);
-    // tree.deleteKey(280);
-    // tree.deleteKey(210);
-
-    //     cout<<"Before deletion"<<endl;
-    // tree.levelOrder();
-    // tree.deleteKey(220);
-
-    // cout<<endl<<endl<<endl;
-    // cout<<"After deletion"<<endl;
-    tree.levelOrder();
-
-    // tree.inorderTraversal();
-    // cout<<endl;
-    // cout<<"Leaves"<<endl;
-    // tree.traverseLeaves();
-    // cout<<"LevelOrder"<<endl;
-    // cout<<tree.search(30)<<endl;
-    // cout<<tree.root->keys<<endl;
+    int maxChildren = 4;
+    BPlusTree tree(maxChildren);
 }
