@@ -2,71 +2,103 @@
 #include "BTree.cpp"
 #include <bits/stdc++.h>
 
+void printMenu(bool bplus = false) {
+    cout<<"Menu:"<<endl;
+    cout<<"1. Search key <S key>"<<endl;
+    cout<<"2. Insert key <I key>"<<endl;
+    cout<<"3. Delete key <D key>"<<endl;
+    cout<<"4. Level order traversal <LT>"<<endl;
+    cout<<"5. Inorder traversal <IT>"<<endl;
+    if(bplus) cout<<"6. Traverse leaves <TL>"<<endl;
+    cout<<"Exit <E>"<<endl;
+    cout<<endl<<endl;
+}
+
 int main() {
-    int maxChildren = 5;
-    BTree tree(maxChildren);
+    cout<<"Choose tree: "<<endl;
+    cout<<"1. BTree"<<endl;
+    cout<<"2. B+Tree"<<endl;
 
-    vector<int> insertKeys = { 
-        770,
-        449,
-        943,
-        248,
-        765,
-        192,
-        454,
-        743,
-        792,
-        390,
-        104,
-        12,
-        37,
-        85,
-        636,
-        790,
-        503,
-        299,
-        445,
-        926,
-        290,
-        440,
-        755,
-        155,
-        780,
-        65,
-        275,
-        368,
-        311,
-        54
-    };
+    int choice;
+    cin>>choice;
 
-    for(auto i: insertKeys) {
-        cout<<endl<<endl;
-        tree.insertKey(i);
-        cout<<"Inserted "<<i<<endl;
-        tree.levelOrder();
-        // cout<<"Leaves ";
-        // tree.traverseLeaves();
+    cout<<"Enter maximum number of children per node (order of tree): "<<endl;
+    int numChildren;
+    cin>>numChildren;
+
+    if(choice == 1) {
+        BTree tree(numChildren);
+        string input;
+        int inputKey;
+        while(true) {
+            // printMenu();        
+            cin>>input;
+            if(input == "S") {
+                cin>>inputKey;
+                cout<<tree.search(inputKey)<<endl;
+            } else if(input == "I") {
+                cin>>inputKey;
+                tree.insertKey(inputKey);
+                cout<<"Inserted "<<inputKey<<endl;
+                tree.levelOrder();
+            } else if(input == "D") {
+                cin>>inputKey;
+                tree.deleteKey(inputKey, tree.root);;
+                cout<<"Deleted "<<inputKey<<endl;
+                tree.levelOrder();
+            } else if(input == "LT") {
+                cout<<"Level order Traversal :"<<endl;
+                tree.levelOrder();
+            } else if(input == "IT") {
+                cout<<"Inorder Traversal :"<<endl;
+                tree.inorderTraversal();
+                cout<<endl;
+            } else if(input == "E") {
+                break;
+            } else {
+                cout<<"Invalid input"<<endl;
+            }
+            cout<<endl<<endl;
+        }
+    } else if(choice == 2) {
+        BPlusTree tree(numChildren);
+        string input;
+        int inputKey;
+        while(true) {
+            // printMenu();
+            cin>>input;
+            if(input == "S") {
+                cin>>inputKey;
+                cout<<tree.search(inputKey)<<endl;
+            } else if(input == "I") {
+                cin>>inputKey;
+                tree.insertKey(inputKey);
+                cout<<"Inserted "<<inputKey<<endl;
+                tree.levelOrder();
+            } else if(input == "D") {
+                cin>>inputKey;
+                tree.deleteKey(inputKey);
+                cout<<"Deleted "<<inputKey<<endl;
+                tree.levelOrder();
+            } else if(input == "LT") {
+                cout<<"Level order Traversal :"<<endl;
+                tree.levelOrder();
+            } else if(input == "IT") {
+                cout<<"Inorder Traversal :"<<endl;
+                tree.inorderTraversal();
+                cout<<endl;
+            } else if(input == "E") {
+                break;
+            } else if(input == "TL") {
+                cout<<"Leaves Traversal: "<<endl;
+                tree.traverseLeaves();
+            } else {
+                cout<<"Invalid input"<<endl;
+            }
+            cout<<endl<<endl;
+        }
+    } else {
+        cout<<"Invalid choice"<<endl;
     }
-
-    vector<int> deleteKeys = {
-        790,
-        104,
-        454,
-        765,
-        503,
-        248,
-        192,
-        290,
-        12,
-        37
-    };
-
-    for(auto i: deleteKeys) {
-        cout<<endl<<endl;
-        tree.deleteKey(i, tree.root);
-        cout<<"Deleted "<<i<<endl;
-        tree.levelOrder();
-        // cout<<"Leaves ";
-        // tree.traverseLeaves();
-    }
+    return 0;
 }
