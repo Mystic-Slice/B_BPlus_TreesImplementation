@@ -1,33 +1,42 @@
 #include "B+Tree.cpp"
+#include "BTree.cpp"
 #include <bits/stdc++.h>
 
 int main() {
     int maxChildren = 5;
-    BPlusTree tree(maxChildren);
+    BTree tree(maxChildren);
 
     vector<int> insertKeys = { 
-        1804,
-        846,
-        1681,
-        1714,
-        1957,
-        424,
-        719,
-        1649,
-        596,
-        1189,
-        1025,
-        1350,
-        783,
-        1102,
-        2044,
-        1967,
-        1365,
-        1540,
-        304,
-        1303,
-        35,
-        521,
+        770,
+        449,
+        943,
+        248,
+        765,
+        192,
+        454,
+        743,
+        792,
+        390,
+        104,
+        12,
+        37,
+        85,
+        636,
+        790,
+        503,
+        299,
+        445,
+        926,
+        290,
+        440,
+        755,
+        155,
+        780,
+        65,
+        275,
+        368,
+        311,
+        54
     };
 
     for(auto i: insertKeys) {
@@ -35,44 +44,29 @@ int main() {
         tree.insertKey(i);
         cout<<"Inserted "<<i<<endl;
         tree.levelOrder();
-        cout<<"Leaves ";
-        tree.traverseLeaves();
+        // cout<<"Leaves ";
+        // tree.traverseLeaves();
     }
 
-    tree.inorderTraversal();
-    cout<<endl;
-
     vector<int> deleteKeys = {
-        1365,
-        1714,
-        783,
-        596,
-        304,
-        35,
-        1957,
-        1967,
-        1189,
-        1102,
-        521,
-        1025,
-        424,
-        1681,
-        1804,
-        719,
-        846,
-        1540,
-        1303,
-        1649,
-        2044,
-        1350
+        790,
+        104,
+        454,
+        765,
+        503,
+        248,
+        192,
+        290,
+        12,
+        37
     };
 
     for(auto i: deleteKeys) {
         cout<<endl<<endl;
-        tree.deleteKey(i);
+        tree.deleteKey(i, tree.root);
         cout<<"Deleted "<<i<<endl;
         tree.levelOrder();
-        cout<<"Leaves ";
-        tree.traverseLeaves();
+        // cout<<"Leaves ";
+        // tree.traverseLeaves();
     }
 }

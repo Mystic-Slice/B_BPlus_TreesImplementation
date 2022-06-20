@@ -3,18 +3,16 @@
 #include "utils.cpp"
 #endif
 
-class BPlusNode {
+class BNode {
     public:
         bool leaf; // Node is a leaf or not
-        BPlusNode* parent;
-        BPlusNode* next; // Next node in the linked list (only found in leaves)
+        BNode* parent;
         int minChildren, maxChildren, numChildren, numKeys;
         vector<int> keys;
-        vector<BPlusNode*> children;
+        vector<BNode*> children;
 
-        BPlusNode(int limit): leaf(false), 
+        BNode(int limit): leaf(false), 
                         parent(nullptr),
-                        next(nullptr), 
                         minChildren(ceil(limit/2.0)), 
                         maxChildren(limit),
                         numChildren(0), 
@@ -29,14 +27,14 @@ class BPlusNode {
 
         bool canDonate() { return numKeys > (minChildren - 1); }
 
-        BPlusNode* leftSibling() {
+        BNode* leftSibling() {
             if(not parent) return nullptr;
             int index = find(parent->children.begin(), parent->children.end(), this) - parent->children.begin();
             if(index == 0) return nullptr;
             else return parent->children[index - 1];
         }
 
-        BPlusNode* rightSibling() {
+        BNode* rightSibling() {
             if(not parent) return nullptr;
             int index = find(parent->children.begin(), parent->children.end(), this) - parent->children.begin();
             if(index == parent->children.size() - 1) return nullptr;
@@ -50,8 +48,8 @@ class BPlusNode {
             return donatedKey;
         }
 
-        BPlusNode* donateGreatestChild() {
-            BPlusNode* donatedChild = children[numChildren - 1];
+        BNode* donateGreatestChild() {
+            BNode* donatedChild = children[numChildren - 1];
             children[numChildren - 1] = nullptr;
             numChildren--;
             return donatedChild;
@@ -65,8 +63,8 @@ class BPlusNode {
             return donatedKey;
         }
 
-        BPlusNode* donateLeastChild() {
-            BPlusNode* donatedChild = children[0];
+        BNode* donateLeastChild() {
+            BNode* donatedChild = children[0];
             children.erase(children.begin());
             children.push_back(nullptr);
             numChildren--;
@@ -89,13 +87,13 @@ class BPlusNode {
             return prevKey;
         }
 
-        void replaceDonatedKey(BPlusNode* node) {
+        void replaceDonatedKey(BNode* node) {
             int index = find(children.begin(), children.end(), node) - children.begin();
             if(index >= children.size()) return;
             keys[index] = leftMostKey(children[index+1]);
         }
 
-        int leftMostKey(BPlusNode* node) {
+        int leftMostKey(BNode* node) {
             if(node->isLeaf()) {
                 return node->keys[0];
             } else {
@@ -103,44 +101,11 @@ class BPlusNode {
             }
         }
 
-        // Merge leaves
-        // Just add the keys to a single node and delete a key from parent
-        // No need to care about children here
-        BPlusNode* mergeLeaves(BPlusNode* rightNode) {
-
-            auto currIndex = find(parent->children.begin(), parent->children.end(), this) - parent->children.begin();
-            parent->keys.erase(parent->keys.begin() + currIndex);
-            parent->keys.push_back(INT_MAX);
-            parent->numKeys--;
-            
-            auto itrNode = find(parent->children.begin(), parent->children.end(), rightNode);
-            parent->children.erase(itrNode);
-            parent->children.push_back(nullptr);
-            parent->numChildren--;
-
-            
-            for(int i = numKeys; i < numKeys + rightNode->numKeys; i++) {
-                keys[i] = rightNode->keys[i - numKeys];
-            }
-            numKeys += rightNode->numKeys;
-
-            next = rightNode->next;
-
-            if(parent->numKeys == 0) {
-                parent = nullptr;
-                return this;
-            } else {
-                BPlusNode* returnRoot = parent;
-                while(returnRoot->parent) returnRoot = returnRoot->parent;
-                return returnRoot;
-            }
-        }
-
-        // Merge internal nodes
+        // Merge nodes
         // Transfer one node to parent
         // Pull down one node from parent
         // Transfer keys and children to a single node
-        BPlusNode* mergeInternal(BPlusNode* rightNode) {
+        BNode* merge(BNode* rightNode) {
             auto currIndex = find(parent->children.begin(), parent->children.end(), this) - parent->children.begin();
             int parentKey = parent->keys[currIndex];
             parent->keys.erase(parent->keys.begin() + currIndex);
@@ -160,17 +125,15 @@ class BPlusNode {
 
             for(int i = numChildren; i<numChildren + rightNode->numChildren; i++) {
                 children[i] = rightNode->children[i - numChildren];
-                children[i]->parent = this;
+                if(children[i]) children[i]->parent = this;
             }
             numChildren += rightNode->numChildren;
-
-            next = rightNode->next;
 
             if(parent->numKeys == 0) {
                 parent = nullptr;
                 return this;
             } else {
-                BPlusNode* returnRoot = parent;
+                BNode* returnRoot = parent;
                 while(returnRoot->parent) returnRoot = returnRoot->parent;
                 return returnRoot;
             }
@@ -190,7 +153,7 @@ class BPlusNode {
         }
 
         // Adds the child to the same corresponding index as the key
-        void addChild(BPlusNode* child, int key, int offset = 0) {
+        void addChild(BNode* child, int key, int offset = 0) {
             int index = find(keys.begin(), keys.end(), key) - keys.begin() + offset;
             for(int i = children.size() - 1; i>index; i--) {
                 children[i] = children[i-1];
@@ -199,46 +162,11 @@ class BPlusNode {
             numChildren++;
         }
 
-        // Update the previous left neighbour's next pointer to the newly added child node
-        void updateNext(int key) {
-            int index = find(keys.begin(), keys.end(), key) - keys.begin();
-            if(index == 0) return updateByDFS(children[0]);
-            // if(not index) return;
-            children[index-1]->next = children[index];
-        }
-
-        // Incase the child that was added is the leftmost node of the subtree
-        // Its left neighbour has to found by DFS
-        void updateByDFS(BPlusNode* child) {
-            BPlusNode* root = this;
-            while(root->parent) root = root->parent;
-
-            BPlusNode* prevLeaf = nullptr;
-            stack<BPlusNode*> st;
-            st.push(root);
-            while(!st.empty()) {
-                BPlusNode* node = st.top(); st.pop();
-                if(node->isLeaf()) {
-                    if(node == child){
-                        if(prevLeaf) prevLeaf->next = child;
-                        return;
-                    } else {
-                        prevLeaf = node;
-                    }
-                } else {
-                    // Should add in reverse to get leaves in left to right order
-                    for(int i = node->numChildren-1; i >= 0; i--) {
-                        if(node->children[i]) st.push(node->children[i]);
-                    }
-                }
-            }
-        }
-
         // Splits the node into two if the bound is exceeded
         // Returns root
         // Recursively reaches the root even if nodes along the way
         // are valid...just to get the new root incase the root changes
-        BPlusNode* splitIfNeeded() {
+        BNode* splitIfNeeded() {
 
             // Take the median to the parent node
             // Split the current node into two halves
@@ -256,14 +184,10 @@ class BPlusNode {
             int medianKey = keys[median];
             
             // Create a new node for left child
-            BPlusNode* leftNode = new BPlusNode(maxChildren);
+            BNode* leftNode = new BNode(maxChildren);
             leftNode->leaf = leaf;
-            leftNode->next = this;
 
-            // Retain the median element in the right node only for leaves
-            // This is taken care by the value of startI            
             int startI = median + 1;
-            if(leaf) startI--;
 
             // Copy the elements of leftnode
             for(int i = 0; i<=median; i++) {
@@ -310,7 +234,7 @@ class BPlusNode {
             if(not parent) {
                 // Current node is the root
                 // Has to be split and new root is created
-                BPlusNode* newParent = new BPlusNode(maxChildren);
+                BNode* newParent = new BNode(maxChildren);
                 newParent->addKey(medianKey);
                 newParent->addChild(leftNode, medianKey);
                 newParent->children[1] = this;
@@ -323,110 +247,81 @@ class BPlusNode {
                 // Splitting propagated to the parent                
                 parent->addKey(medianKey);
                 parent->addChild(leftNode, medianKey);
-                parent->updateNext(medianKey);
                 leftNode->parent = parent;
                 return parent->splitIfNeeded();
             }
         }
 };
 
-class BPlusTree {
+class BTree {
     public:
-        BPlusNode* root;
+        BNode* root;
         int minChildren, maxChildren;
 
-        BPlusTree(int limit): minChildren(ceil(limit/2.0)), maxChildren(limit), root(nullptr) {}
+        BTree(int limit): minChildren(ceil(limit/2.0)), maxChildren(limit), root(nullptr) {}
 
         bool search(int key) {
-            BPlusNode* node = searchNode(key, root);
+            BNode* node = searchNode(key, root);
             if(not node) return false;
 
             for(auto k: node->keys) if(k == key) return true;
             return false;
         }
 
-        BPlusNode* searchNode(int key, BPlusNode* node) {
+        BNode* searchNode(int key, BNode* node) {
             if(not node) return nullptr;
             if(node->isLeaf()) return node;
 
             for(int i = 0; i<node->keys.size(); i++) {
                 if(key < node->keys[i]) return searchNode(key, node->children[i]);
+                else if(key == node->keys[i]) return node;
             }
             return searchNode(key, node->children.back());
         }
 
         void insertKey(int key) {
             if(not root) {
-                root = new BPlusNode(maxChildren);
+                root = new BNode(maxChildren);
                 root->addKey(key);
                 root->leaf = true;
                 return;
             }
-            BPlusNode* node = searchNode(key, root);
+            BNode* node = searchNode(key, root);
+            if(not node->isLeaf()) {
+                cout<<key<<" is already present"<<endl;
+            }
             node->addKey(key);
             root = node->splitIfNeeded();
         }
 
-        void deleteKey(int key) {
+        void deleteKey(int key, BNode* rootNode) {
             // Delete key only from leaves
             // Key can remain in the internal nodes
-            BPlusNode* node = searchNode(key, root);
+            BNode* node = searchNode(key, rootNode);
             auto itr = find(node->keys.begin(), node->keys.end(), key);
             if(itr == node->keys.end()) {
+                cout<<node->keys<<endl;
                 cout<<"Node not found: "<<key<<endl;
                 return;
             }
 
             int index = itr - node->keys.begin();
-            for(int i = index; i < node->keys.size() - 1; i++) {
-                node->keys[i] = node->keys[i + 1];
-            }
-            node->keys.back() = INT_MAX;
-            node->numKeys--;
-
-            manageUnderflowLeaf(node, key);
-            manageUnderflowParent(node->parent);
-        }
-
-        void manageUnderflowLeaf(BPlusNode* node, int key) {
-            if(node->numKeys >= minChildren - 1) return;
-            if(node == root) {
-                if(node->numKeys == 0) root = nullptr;
-                return;
-            };
-
-            // Try borrowing from leftSibling
-            BPlusNode* leftSibling = node->leftSibling();
-            if(leftSibling && leftSibling->canDonate()) {
-                int donatedKey = leftSibling->donateGreatestKey();
-                node->addKey(donatedKey);
-                node->parent->replaceDonatedKey(leftSibling);
-                return;
-            }
-
-            // Try borrowing from rightSibling
-            BPlusNode* rightSibling = node->rightSibling();
-            if(rightSibling && rightSibling->canDonate()) {
-                int donatedKey = rightSibling->donateLeastKey();
-                node->addKey(donatedKey);
-                node->parent->replaceDonatedKey(node);
-                return;
-            }
-
-            // Try merge with leftSibling
-            if(leftSibling) {
-                root = leftSibling->mergeLeaves(node);
-                return;
-            }
-
-            // Try merge with rightSibling
-            if(rightSibling) {
-                root = node->mergeLeaves(rightSibling);
-                return;
+            if(node->isLeaf()) {
+                for(int i = index; i < node->keys.size() - 1; i++) {
+                    node->keys[i] = node->keys[i + 1];
+                }
+                node->keys.back() = INT_MAX;
+                node->numKeys--;
+                manageUnderflow(node);
+            } else {
+                int rightChildIndex = find(node->keys.begin(), node->keys.end(), key) - node->keys.begin() + 1;
+                int inorderSuccessor = node->leftMostKey(node->children[rightChildIndex]);
+                node->keys[index] = inorderSuccessor;
+                deleteKey(inorderSuccessor, node->children[rightChildIndex]);
             }
         }
 
-        void manageUnderflowParent(BPlusNode* node) {
+        void manageUnderflow(BNode* node) {
             if(not node) return;
 
             if(node->numKeys >= minChildren - 1) return;
@@ -437,44 +332,44 @@ class BPlusTree {
             };
 
             // Try borrowing from leftSibling
-            BPlusNode* leftSibling = node->leftSibling();
+            BNode* leftSibling = node->leftSibling();
             if(leftSibling && leftSibling->canDonate()) {
                 int donatedKey = leftSibling->donateGreatestKey();
-                BPlusNode* donatedChild = leftSibling->donateGreatestChild();
+                BNode* donatedChild = leftSibling->donateGreatestChild();
                 node->parent->addKey(donatedKey);
                 int nextKey = node->parent->getNextKey(donatedKey);
                 node->addKey(nextKey);
                 node->addChild(donatedChild, nextKey);
-                donatedChild->parent = node;
+                if(donatedChild) donatedChild->parent = node;
                 return;
             }
 
             // Try borrowing from rightSibling
-            BPlusNode* rightSibling = node->rightSibling();
+            BNode* rightSibling = node->rightSibling();
             if(rightSibling && rightSibling->canDonate()) {
                 int donatedKey = rightSibling->donateLeastKey();
-                BPlusNode* donatedChild = rightSibling->donateLeastChild();
+                BNode* donatedChild = rightSibling->donateLeastChild();
                 node->parent->addKey(donatedKey);
                 int prevKey = node->parent->getPrevKey(donatedKey);
                 node->addKey(prevKey);
                 node->addChild(donatedChild, prevKey, 1);
-                donatedChild->parent = node;
+                if(donatedChild) donatedChild->parent = node;
                 return;
             }
 
             // Try merge with leftSibling
             if(leftSibling) {
-                root = leftSibling->mergeInternal(node);
+                root = leftSibling->merge(node);
                 return;
             }
 
             // Try merge with rightSibling
             if(rightSibling) {
-                root = node->mergeInternal(rightSibling);
+                root = node->merge(rightSibling);
                 return;
             }
 
-            manageUnderflowParent(node->parent);
+            manageUnderflow(node->parent);
         }
 
         void inorderTraversal() {
@@ -485,7 +380,7 @@ class BPlusTree {
             inorderTraversal(root);
         }
 
-        void inorderTraversal(BPlusNode* node) {
+        void inorderTraversal(BNode* node) {
             if(not node) return;
 
             for(int i = 0; i<node->keys.size(); i++) {
@@ -497,24 +392,6 @@ class BPlusTree {
             if(node->keys.back() != INT_MAX) inorderTraversal(node->children.back());
         }
 
-        void traverseLeaves() {
-            if(not root) {
-                cout<<"Tree is empty"<<endl;
-                return;
-            }
-
-            // Find the leftmost node
-            BPlusNode* node = root;
-            while(not node->isLeaf()) node = node->children[0];
-
-            // Use the `next` pointer to traverse through the elements
-            while(node){
-                cout<<node->keys;
-                node = node->next;
-            }
-            cout<<endl;
-        }
-
         void levelOrder() {
             if(not root) {
                 cout<<"Tree is empty"<<endl;
@@ -524,11 +401,11 @@ class BPlusTree {
             int colorIndex = 0;
 
             int prevDepth = 0;
-            BPlusNode* prevParent = nullptr;
-            queue<pair<BPlusNode*, int>> q;
+            BNode* prevParent = nullptr;
+            queue<pair<BNode*, int>> q;
             q.push({root, 0});
             while(!q.empty()) {
-                BPlusNode* node = q.front().first;
+                BNode* node = q.front().first;
                 int depth = q.front().second;
                 q.pop();
                 if(depth != prevDepth) {
