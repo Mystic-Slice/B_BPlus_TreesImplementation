@@ -352,7 +352,7 @@ class BPlusTree {
             for(int i = 0; i<node->keys.size(); i++) {
                 if(key < node->keys[i]) return searchNode(key, node->children[i]);
             }
-            return searchNode(key, node->children.back());
+            return searchNode(key, node->children[node->numChildren - 1]);
         }
 
         void insertKey(int key) {

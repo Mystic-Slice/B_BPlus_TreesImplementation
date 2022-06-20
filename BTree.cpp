@@ -276,7 +276,7 @@ class BTree {
                 if(key < node->keys[i]) return searchNode(key, node->children[i]);
                 else if(key == node->keys[i]) return node;
             }
-            return searchNode(key, node->children.back());
+            return searchNode(key, node->children[node->numChildren - 1]);
         }
 
         void insertKey(int key) {
