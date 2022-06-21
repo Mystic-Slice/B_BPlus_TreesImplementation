@@ -1,6 +1,6 @@
+#include <bits/stdc++.h>
 #include "B+Tree.cpp"
 #include "BTree.cpp"
-#include <bits/stdc++.h>
 
 void printMenu(bool bplus = false) {
     cout<<"Menu:"<<endl;
@@ -65,7 +65,7 @@ int main() {
         string input;
         int inputKey;
         while(true) {
-            // printMenu();
+            // printMenu(true);
             cin>>input;
             if(input == "S") {
                 cin>>inputKey;
