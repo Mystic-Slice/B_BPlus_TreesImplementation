@@ -262,30 +262,36 @@ BNode* BTree::searchNode(int key, BNode* node) {
     return searchNode(key, node->children[node->numChildren - 1]);
 }
 
-void BTree::insertKey(int key) {
+bool BTree::insertKey(int key) {
     if(not root) {
         root = new BNode(maxChildren);
         root->addKey(key);
         root->leaf = true;
-        return;
+        return true;
     }
     BNode* node = searchNode(key, root);
-    if(not node->isLeaf()) {
-        cout<<key<<" is already present"<<endl;
+    auto itr = find(node->keys.begin(), node->keys.end(), key);
+    if(itr != node->keys.end()) {
+        cout<<"Key already present"<<endl;
+        return false;
     }
     node->addKey(key);
     root = node->splitIfNeeded();
+    return true;
 }
 
-void BTree::deleteKey(int key, BNode* rootNode) {
+bool BTree::deleteKey(int key, BNode* rootNode) {
     // Delete key only from leaves
     // Key can remain in the internal nodes
     BNode* node = searchNode(key, rootNode);
+    if(not node) {
+        cout<<"Node not found: "<<key<<endl;
+        return false;
+    }
     auto itr = find(node->keys.begin(), node->keys.end(), key);
     if(itr == node->keys.end()) {
-        cout<<node->keys<<endl;
         cout<<"Node not found: "<<key<<endl;
-        return;
+        return false;
     }
 
     int index = itr - node->keys.begin();
@@ -302,6 +308,7 @@ void BTree::deleteKey(int key, BNode* rootNode) {
         node->keys[index] = inorderSuccessor;
         deleteKey(inorderSuccessor, node->children[rightChildIndex]);
     }
+    return true;
 }
 
 void BTree::manageUnderflow(BNode* node) {

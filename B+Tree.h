@@ -79,9 +79,9 @@ class BPlusTree {
 
         BPlusNode* searchNode(int key, BPlusNode* node);
 
-        void insertKey(int key);
+        bool insertKey(int key);
 
-        void deleteKey(int key);
+        bool deleteKey(int key);
 
         void manageUnderflowLeaf(BPlusNode* node, int key);
 

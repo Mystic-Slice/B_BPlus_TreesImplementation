@@ -38,14 +38,16 @@ int main() {
                 cout<<tree.search(inputKey)<<endl;
             } else if(input == "I") {
                 cin>>inputKey;
-                tree.insertKey(inputKey);
-                cout<<"Inserted "<<inputKey<<endl;
-                tree.levelOrder();
+                if(tree.insertKey(inputKey)) {
+                    cout<<"Inserted "<<inputKey<<endl;
+                    tree.levelOrder();
+                }
             } else if(input == "D") {
                 cin>>inputKey;
-                tree.deleteKey(inputKey, tree.root);;
-                cout<<"Deleted "<<inputKey<<endl;
-                tree.levelOrder();
+                if(tree.deleteKey(inputKey, tree.root)) {
+                    cout<<"Deleted "<<inputKey<<endl;
+                    tree.levelOrder();
+                }                
             } else if(input == "LT") {
                 cout<<"Level order Traversal :"<<endl;
                 tree.levelOrder();
@@ -72,14 +74,16 @@ int main() {
                 cout<<tree.search(inputKey)<<endl;
             } else if(input == "I") {
                 cin>>inputKey;
-                tree.insertKey(inputKey);
-                cout<<"Inserted "<<inputKey<<endl;
-                tree.levelOrder();
+                if(tree.insertKey(inputKey)) {
+                    cout<<"Inserted "<<inputKey<<endl;
+                    tree.levelOrder();
+                }
             } else if(input == "D") {
                 cin>>inputKey;
-                tree.deleteKey(inputKey);
-                cout<<"Deleted "<<inputKey<<endl;
-                tree.levelOrder();
+                if(tree.deleteKey(inputKey)) {
+                    cout<<"Deleted "<<inputKey<<endl;
+                    tree.levelOrder();
+                }  
             } else if(input == "LT") {
                 cout<<"Level order Traversal :"<<endl;
                 tree.levelOrder();

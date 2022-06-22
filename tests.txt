@@ -64,50 +64,142 @@ tree.deleteKey(60);
 tree.deleteKey(40);
 
 
-// Assignment Insertions and Deletions
-tree.insertKey(1804);
-tree.insertKey(846);
-tree.insertKey(1681);
-tree.insertKey(1714);
-tree.insertKey(1957);
-tree.insertKey(424);
-tree.insertKey(719);
-tree.insertKey(1649);
-tree.insertKey(596);
-tree.insertKey(1189);
-tree.insertKey(1025);
-tree.insertKey(1350);
-tree.insertKey(783);
-tree.insertKey(1102);
-tree.insertKey(2044);
-tree.insertKey(1967);
-tree.insertKey(1365);
-tree.insertKey(1540);
-tree.insertKey(304);
-tree.insertKey(1303);
-tree.insertKey(35);
-tree.insertKey(521);
-tree.levelOrder();
+// B plus insertions and deletions
+    vector<int> insertKeys = { 
+        1804,
+        846,
+        1681,
+        1714,
+        1957,
+        424,
+        719,
+        1649,
+        596,
+        1189,
+        1025,
+        1350,
+        783,
+        1102,
+        2044,
+        1967,
+        1365,
+        1540,
+        304,
+        1303,
+        35,
+        521,
+    };
 
+    for(auto i: insertKeys) {
+        cout<<endl<<endl;
+        tree.insertKey(i);
+        cout<<"Inserted "<<i<<endl;
+        tree.levelOrder();
+        // cout<<"Leaves ";
+        // tree.traverseLeaves();
+    }
 
-vector<int> deleteKeys = {
-    1365,
-    1714,
-    783,
-    596,
-    304,
-    35,
-    1957,
-    1967,
-    1189,
-    1102,
-    521,
-    1025
-};
+    tree.inorderTraversal();
+    cout<<endl;
 
-for(auto i: deleteKeys) {
-    cout<<endl<<endl;
-    tree.deleteKey(i);
-    cout<<"Deleted "<<i<<endl;
-    tree.levelOrder();
-}
+    vector<int> deleteKeys = {
+        1365,
+        1714,
+        783,
+        596,
+        304,
+        35,
+        1957,
+        1967,
+        1189,
+        1102,
+        521,
+        1025,
+        424,
+        1681,
+        1804,
+        719,
+        846,
+        1540,
+        1303,
+        1649,
+        2044,
+        1350
+    };
+
+    for(auto i: deleteKeys) {
+        cout<<endl<<endl;
+        tree.deleteKey(i);
+        cout<<"Deleted "<<i<<endl;
+        tree.levelOrder();
+        // cout<<"Leaves ";
+        // tree.traverseLeaves();
+    }
+
+// B tree insertions adn deletions
+    vector<int> insertKeys = { 
+        770,
+        449,
+        943,
+        248,
+        765,
+        192,
+        454,
+        743,
+        792,
+        390,
+        104,
+        12,
+        37,
+        85,
+        636,
+        790,
+        503,
+        299,
+        445,
+        926,
+        290,
+        440,
+        755,
+        155,
+        780,
+        65,
+        275,
+        368,
+        311,
+        54
+    };
+
+    for(auto i: insertKeys) {
+        cout<<endl<<endl;
+        tree.insertKey(i);
+        cout<<"Inserted "<<i<<endl;
+        tree.levelOrder();
+        // cout<<"Leaves ";
+        // tree.traverseLeaves();
+    }
+
+    tree.inorderTraversal();
+    cout<<endl;
+
+    vector<int> deleteKeys = {
+        790,
+        104,
+        454,
+        765,
+        503,
+        248,
+        192,
+        290,
+        12,
+        37
+    };
+
+    for(auto i: deleteKeys) {
+        cout<<endl<<endl;
+        tree.deleteKey(i);
+        cout<<"Deleted "<<i<<endl;
+        tree.levelOrder();
+        // cout<<"Leaves ";
+        // tree.traverseLeaves();
+    }

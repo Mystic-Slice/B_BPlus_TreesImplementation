@@ -67,9 +67,9 @@ class BTree {
 
         BNode* searchNode(int key, BNode* node);
 
-        void insertKey(int key);
+        bool insertKey(int key);
 
-        void deleteKey(int key, BNode* rootNode);
+        bool deleteKey(int key, BNode* rootNode);
 
         void manageUnderflow(BNode* node);
 

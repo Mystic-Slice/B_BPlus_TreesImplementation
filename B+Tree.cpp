@@ -337,26 +337,31 @@ BPlusNode* BPlusTree::searchNode(int key, BPlusNode* node) {
     return searchNode(key, node->children[node->numChildren - 1]);
 }
 
-void BPlusTree::insertKey(int key) {
+bool BPlusTree::insertKey(int key) {
     if(not root) {
         root = new BPlusNode(maxChildren);
         root->addKey(key);
         root->leaf = true;
-        return;
+        return true;
     }
     BPlusNode* node = searchNode(key, root);
     node->addKey(key);
     root = node->splitIfNeeded();
+    return true;
 }
 
-void BPlusTree::deleteKey(int key) {
+bool BPlusTree::deleteKey(int key) {
     // Delete key only from leaves
     // Key can remain in the internal nodes
     BPlusNode* node = searchNode(key, root);
+    if(not node) {
+        cout<<"Node not found: "<<key<<endl;
+        return false;
+    }
     auto itr = find(node->keys.begin(), node->keys.end(), key);
     if(itr == node->keys.end()) {
         cout<<"Node not found: "<<key<<endl;
-        return;
+        return false;
     }
 
     int index = itr - node->keys.begin();
@@ -368,6 +373,7 @@ void BPlusTree::deleteKey(int key) {
 
     manageUnderflowLeaf(node, key);
     manageUnderflowParent(node->parent);
+    return true;
 }
 
 void BPlusTree::manageUnderflowLeaf(BPlusNode* node, int key) {
