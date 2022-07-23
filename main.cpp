@@ -31,7 +31,7 @@ int main() {
         string input;
         int inputKey;
         while(true) {
-            // printMenu();        
+            printMenu();        
             cin>>input;
             if(input == "S") {
                 cin>>inputKey;
@@ -67,7 +67,7 @@ int main() {
         string input;
         int inputKey;
         while(true) {
-            // printMenu(true);
+            printMenu(true);
             cin>>input;
             if(input == "S") {
                 cin>>inputKey;
